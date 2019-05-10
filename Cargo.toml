@@ -1,0 +1,30 @@
+[package]
+name = "wasmtime-py"
+version = "0.1.0"
+authors = ["Yury Delendik <ydelendik@mozilla.com>"]
+edition = "2018"
+
+[lib]
+name = "wasmtime_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+cranelift-codegen = "0.30.0"
+cranelift-native = "0.30.0"
+wasmtime-environ = { path = "../wasmtime/wasmtime-environ" }
+wasmtime-jit = { path = "../wasmtime/wasmtime-jit" }
+wasmtime-runtime = { path = "../wasmtime/wasmtime-runtime" }
+
+[dependencies.cpython]
+version = "0.2.0"
+default-features = false
+features = ["extension-module-2-7", "python27-sys"]
+# features = ["extension-module"]
+
+[patch.crates-io]
+gimli = { git = "https://github.com/gimli-rs/gimli", rev="423431f6747167af8e64cc8c8378f9a34a18ff8f" }
+cranelift-codegen = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
+cranelift-wasm = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
+cranelift-native = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
+cranelift-entity = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
+cranelift-frontend = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
