@@ -11,9 +11,9 @@ crate-type = ["cdylib"]
 [dependencies]
 cranelift-codegen = "0.30.0"
 cranelift-native = "0.30.0"
-wasmtime-environ = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
-wasmtime-jit = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
-wasmtime-runtime = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
+wasmtime-environ = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
+wasmtime-jit = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
+wasmtime-runtime = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
 
 [dependencies.pyo3]
 version = "0.7.0-alpha.1"

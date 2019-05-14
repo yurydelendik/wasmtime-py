@@ -1,8 +1,8 @@
 use pyo3::prelude::*;
 
-use wasmtime_jit::CompiledModule;
+use std::rc::Rc;
 
 #[pyclass]
 pub struct Module {
-    pub module: CompiledModule,
+    pub module: Rc<wasmtime_environ::Module>,
 }

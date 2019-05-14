@@ -2,13 +2,14 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
 use pyo3::wrap_pyfunction;
 
+use crate::import::into_instance_from_obj;
 use crate::instance::{Instance, InstanceContext};
 use crate::module::Module;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 mod function;
+mod import;
 mod instance;
 mod module;
 mod value;
@@ -40,7 +41,7 @@ impl InstantiateResultObject {
 pub fn instantiate(
     py: Python,
     buffer_source: &PyBytes,
-    _import_obj: Py<PyDict>,
+    import_obj: &PyDict,
 ) -> PyResult<Py<InstantiateResultObject>> {
     let wasm_data = buffer_source.as_bytes();
 
@@ -52,25 +53,27 @@ pub fn instantiate(
         let flag_builder = cranelift_codegen::settings::builder();
         isa_builder.finish(cranelift_codegen::settings::Flags::new(flag_builder))
     };
-    let mut compiler = wasmtime_jit::Compiler::new(isa);
-    let mut resolver = wasmtime_jit::NullResolver {};
-    let global_exports = Rc::new(RefCell::new(HashMap::new()));
-    let mut module = wasmtime_jit::CompiledModule::new(
-        &mut compiler,
-        wasm_data,
-        &mut resolver,
-        global_exports,
-        generate_debug_info,
-    )
-    .expect("compiled");
 
-    let mut context = wasmtime_jit::Context::new(Box::new(compiler));
+    let mut context = wasmtime_jit::Context::with_isa(isa);
     context.set_debug_info(generate_debug_info);
-    let _global_exports = context.get_global_exports();
 
-    let instance = module.instantiate().expect("instance");
+    for (name, obj) in import_obj.iter() {
+        context.name_instance(
+            name.to_string(),
+            into_instance_from_obj(py, obj).expect("obj instance"),
+        )
+    }
 
-    let module = Py::new(py, Module { module })?;
+    let instance = context
+        .instantiate_module(None, wasm_data)
+        .expect("instance");
+
+    let module = Py::new(
+        py,
+        Module {
+            module: instance.module(),
+        },
+    )?;
     let context = Rc::new(RefCell::new(InstanceContext {
         jit_context: context,
         instance,
