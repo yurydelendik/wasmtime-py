@@ -1,42 +1,17 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTuple};
+use pyo3::types::PyDict;
 
-use std::cell::{RefCell, RefMut};
+use crate::function::Function;
+use std::cell::RefCell;
 use std::rc::Rc;
 
-use wasmtime_jit;
-
-use crate::value::{outcome_into_pyobj, pyobj_to_runtime_value};
-
-#[pyclass]
-pub struct WasmFn {
-    pub instance_context: Rc<RefCell<InstanceContext>>,
-    pub name: String,
-}
-
-#[pymethods]
-impl WasmFn {
-    #[__call__]
-    #[args(args = "*")]
-    fn call(&self, py: Python, args: &PyTuple) -> PyResult<PyObject> {
-        let (mut jit_context, mut instance) =
-            RefMut::map_split(self.instance_context.borrow_mut(), |ic| {
-                (&mut ic.jit_context, &mut ic.instance)
-            });
-        let args = args
-            .iter()
-            .map(|i| pyobj_to_runtime_value(py, i))
-            .collect::<PyResult<Vec<_>>>();
-        let outcome = jit_context
-            .invoke(&mut instance, self.name.as_str(), args?.as_slice())
-            .expect("good run");
-        outcome_into_pyobj(py, outcome)
-    }
-}
+use wasmtime_environ::Export;
+use wasmtime_jit::{Context, InstanceHandle};
+use wasmtime_runtime::Export as RuntimeExport;
 
 pub struct InstanceContext {
-    pub jit_context: wasmtime_jit::Context,
-    pub instance: wasmtime_jit::InstanceHandle,
+    pub jit_context: Context,
+    pub instance: InstanceHandle,
 }
 
 #[pyclass]
@@ -51,16 +26,37 @@ impl Instance {
         let gil = Python::acquire_gil();
         let py = gil.python();
         let exports = PyDict::new(py);
-        for (name, _) in self.context.borrow().instance.exports() {
-            let f = Py::new(
-                py,
-                WasmFn {
-                    instance_context: self.context.clone(),
-                    name: name.to_string(),
-                },
-            )?;
-            exports.set_item(name, f)?;
+        let instance = &mut self.context.borrow_mut().instance;
+        let mut function_exports = Vec::new();
+        for (name, export) in instance.exports() {
+            match export {
+                Export::Function(_) => function_exports.push(name.to_string()),
+                _ => {
+                    // Skip unknown export type.
+                    continue;
+                }
+            }
         }
+        for name in function_exports {
+            if let Some(RuntimeExport::Function { signature, .. }) = instance.lookup(&name) {
+                let mut args_types = Vec::new();
+                for index in 1..signature.params.len() {
+                    args_types.push(signature.params[index].value_type);
+                }
+                let f = Py::new(
+                    py,
+                    Function {
+                        instance_context: self.context.clone(),
+                        export_name: name.clone(),
+                        args_types,
+                    },
+                )?;
+                exports.set_item(name, f)?;
+            } else {
+                panic!("function is exported");
+            }
+        }
+
         Ok(exports.to_object(py))
     }
 }
