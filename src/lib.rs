@@ -43,6 +43,8 @@ pub fn instantiate(
 ) -> PyResult<Py<InstantiateResultObject>> {
     let wasm_data = buffer_source.as_bytes();
 
+    let generate_debug_info = false;
+
     let isa = {
         let isa_builder =
             cranelift_native::builder().expect("host machine is not a supported target");
@@ -57,12 +59,12 @@ pub fn instantiate(
         wasm_data,
         &mut resolver,
         global_exports,
-        true,
+        generate_debug_info,
     )
     .expect("compiled");
 
     let mut context = wasmtime_jit::Context::new(Box::new(compiler));
-    context.set_debug_info(true);
+    context.set_debug_info(generate_debug_info);
     let _global_exports = context.get_global_exports();
 
     let instance = module.instantiate().expect("instance");

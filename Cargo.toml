@@ -11,18 +11,12 @@ crate-type = ["cdylib"]
 [dependencies]
 cranelift-codegen = "0.30.0"
 cranelift-native = "0.30.0"
-wasmtime-environ = { path = "../wasmtime/wasmtime-environ" }
-wasmtime-jit = { path = "../wasmtime/wasmtime-jit" }
-wasmtime-runtime = { path = "../wasmtime/wasmtime-runtime" }
+wasmtime-environ = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
+wasmtime-jit = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
+wasmtime-runtime = { git = "https://github.com/CraneStation/wasmtime", rev = "2b5be77" }
 
 [dependencies.pyo3]
 version = "0.7.0-alpha.1"
 features = ["extension-module"]
 
 [patch.crates-io]
-gimli = { git = "https://github.com/gimli-rs/gimli", rev="423431f6747167af8e64cc8c8378f9a34a18ff8f" }
-cranelift-codegen = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
-cranelift-wasm = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
-cranelift-native = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
-cranelift-entity = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
-cranelift-frontend = { git = "https://github.com/CraneStation/cranelift", rev = "cb7fccea1204d3880213bc5a0384f588eecf9806" }
