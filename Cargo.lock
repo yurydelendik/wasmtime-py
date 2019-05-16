@@ -970,8 +970,13 @@ name = "wasmtime-py"
 version = "0.2.0"
 dependencies = [
  "cranelift-codegen 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cranelift-entity 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cranelift-frontend 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cranelift-native 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cranelift-wasm 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pyo3 0.7.0-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "region 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "target-lexicon 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmtime-environ 0.1.0 (git+https://github.com/CraneStation/wasmtime?rev=6740704b)",
  "wasmtime-jit 0.1.0 (git+https://github.com/CraneStation/wasmtime?rev=6740704b)",
  "wasmtime-runtime 0.1.0 (git+https://github.com/CraneStation/wasmtime?rev=6740704b)",

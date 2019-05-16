@@ -1,6 +1,6 @@
 
 extern "C" {
-    fn callback(s: *const u8, s_len: u32);
+    fn callback(s: *const u8, s_len: u32) -> u32;
 }
 
 #[no_mangle]

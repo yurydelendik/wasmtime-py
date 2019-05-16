@@ -8,6 +8,7 @@ use crate::module::Module;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+mod code_memory;
 mod function;
 mod import;
 mod instance;
@@ -56,11 +57,12 @@ pub fn instantiate(
 
     let mut context = wasmtime_jit::Context::with_isa(isa);
     context.set_debug_info(generate_debug_info);
+    let global_exports = context.get_global_exports();
 
     for (name, obj) in import_obj.iter() {
         context.name_instance(
             name.to_string(),
-            into_instance_from_obj(py, obj).expect("obj instance"),
+            into_instance_from_obj(py, global_exports.clone(), obj).expect("obj instance"),
         )
     }
 

@@ -39,6 +39,7 @@ impl Instance {
         }
         for name in function_exports {
             if let Some(RuntimeExport::Function { signature, .. }) = instance.lookup(&name) {
+                // TODO Annotate params/result
                 let mut args_types = Vec::new();
                 for index in 1..signature.params.len() {
                     args_types.push(signature.params[index].value_type);

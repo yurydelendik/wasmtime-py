@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyTuple};
 
 use cranelift_codegen::ir;
+use std::ptr;
 use wasmtime_jit::{ActionOutcome, RuntimeValue};
 
 pub fn pyobj_to_runtime_value(_: Python, obj: &PyAny, ty: ir::Type) -> PyResult<RuntimeValue> {
@@ -37,4 +38,24 @@ pub fn outcome_into_pyobj(py: Python, outcome: ActionOutcome) -> PyResult<PyObje
         },
         _ => return Err(PyErr::new::<Exception, _>("error during wasmcall")),
     })
+}
+
+pub unsafe fn read_value_from(py: Python, ptr: *mut i64, ty: ir::Type) -> PyObject {
+    match ty {
+        ir::types::I32 => ptr::read(ptr as *const i32).into_object(py),
+        ir::types::I64 => ptr::read(ptr as *const i64).into_object(py),
+        ir::types::F32 => ptr::read(ptr as *const f32).into_object(py),
+        ir::types::F64 => ptr::read(ptr as *const f64).into_object(py),
+        _ => panic!("TODO add PyResult to read_value_from"),
+    }
+}
+
+pub unsafe fn write_value_to(py: Python, ptr: *mut i64, ty: ir::Type, val: PyObject) {
+    match ty {
+        ir::types::I32 => ptr::write(ptr as *mut i32, val.extract::<i32>(py).expect("i32")),
+        ir::types::I64 => ptr::write(ptr as *mut i64, val.extract::<i64>(py).expect("i64")),
+        ir::types::F32 => ptr::write(ptr as *mut f32, val.extract::<f32>(py).expect("f32")),
+        ir::types::F64 => ptr::write(ptr as *mut f64, val.extract::<f64>(py).expect("f64")),
+        _ => panic!("TODO add PyResult to write_value_to"),
+    }
 }

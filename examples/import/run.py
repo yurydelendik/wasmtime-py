@@ -1,6 +1,6 @@
 import wasmtime_py
 
-def callback(msg_p, msg_len):
+def callback(msg_p: 'i32', msg_len: 'i32') -> 'i32':
     print("{} {}".format(msg_p, msg_len))
 
 env = {
