@@ -1,8 +1,13 @@
 [package]
 name = "wasmtime-py"
 version = "0.2.0"
-authors = ["Yury Delendik <ydelendik@mozilla.com>"]
+authors = ["The Wasmtime Project Developers"]
+description = "Python extension for the wasmtime"
+license = "Apache-2.0 WITH LLVM-exception"
+categories = ["wasm", "python"]
+repository = "https://github.com/yurydelendik/wasmtime-py"
 edition = "2018"
+publish = false
 
 [lib]
 name = "wasmtime_py"
