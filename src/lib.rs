@@ -4,6 +4,7 @@ use pyo3::wrap_pyfunction;
 
 use crate::import::into_instance_from_obj;
 use crate::instance::{Instance, InstanceContext};
+use crate::memory::Memory;
 use crate::module::Module;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -12,6 +13,7 @@ mod code_memory;
 mod function;
 mod import;
 mod instance;
+mod memory;
 mod module;
 mod value;
 
@@ -88,6 +90,7 @@ pub fn instantiate(
 #[pymodule]
 fn wasmtime_py(_: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Instance>()?;
+    m.add_class::<Memory>()?;
     m.add_class::<Module>()?;
     m.add_class::<InstantiateResultObject>()?;
     m.add_wrapped(wrap_pyfunction!(instantiate))?;

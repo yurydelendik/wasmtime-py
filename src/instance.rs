@@ -2,6 +2,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::function::Function;
+use crate::memory::Memory;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -28,13 +29,29 @@ impl Instance {
         let exports = PyDict::new(py);
         let instance = &mut self.context.borrow_mut().instance;
         let mut function_exports = Vec::new();
+        let mut memory_exports = Vec::new();
         for (name, export) in instance.exports() {
             match export {
                 Export::Function(_) => function_exports.push(name.to_string()),
+                Export::Memory(_) => memory_exports.push(name.to_string()),
                 _ => {
                     // Skip unknown export type.
                     continue;
                 }
+            }
+        }
+        for name in memory_exports {
+            if let Some(RuntimeExport::Memory { .. }) = instance.lookup(&name) {
+                let f = Py::new(
+                    py,
+                    Memory {
+                        instance_context: self.context.clone(),
+                        export_name: name.clone(),
+                    },
+                )?;
+                exports.set_item(name, f)?;
+            } else {
+                panic!("memory");
             }
         }
         for name in function_exports {
@@ -54,7 +71,7 @@ impl Instance {
                 )?;
                 exports.set_item(name, f)?;
             } else {
-                panic!("function is exported");
+                panic!("function");
             }
         }
 

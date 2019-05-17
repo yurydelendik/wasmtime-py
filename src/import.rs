@@ -56,16 +56,14 @@ unsafe extern "C" fn stub_fn(vmctx: *mut VMContext, call_id: u32, values_vec: *m
         ))
     }
     let result = obj.call(py, PyTuple::new(py, args), None).expect("result");
-    let result = if result.is_none() {
-        None
-    } else {
-        Some(result.cast_as::<PyTuple>(py).expect("result tuple"))
-    };
     for i in 0..signature.returns.len() {
-        let val = if result.is_none() || result.unwrap().len() >= i {
+        let val = if result.is_none() {
             0.into_object(py) // FIXME default ???
         } else {
-            result.unwrap().get_item(i).into_object(py)
+            if i > 0 {
+                panic!("multiple returns unsupported");
+            }
+            result.clone_ref(py)
         };
         write_value_to(
             py,
