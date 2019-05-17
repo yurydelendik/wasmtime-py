@@ -40,6 +40,7 @@ impl InstantiateResultObject {
     }
 }
 
+/// WebAssembly instantiate API method.
 #[pyfunction]
 pub fn instantiate(
     py: Python,

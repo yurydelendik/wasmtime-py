@@ -1,4 +1,5 @@
 //! Memory management for executable code.
+// Copy of wasmtime's wasmtime-jit/src/code_memory.rs
 
 use core::{cmp, mem};
 use region;

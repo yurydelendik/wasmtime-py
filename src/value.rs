@@ -1,3 +1,5 @@
+//! Utility functions to handle values conversion between abstractions/targets.
+
 use pyo3::exceptions::Exception;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyTuple};

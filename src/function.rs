@@ -1,3 +1,5 @@
+//! Support for a calling of a bounds (exported) function.
+
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
 

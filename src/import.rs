@@ -1,3 +1,5 @@
+//! Support for a calling of an imported function.
+
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyTuple};
 
@@ -82,6 +84,8 @@ fn make_trampoline(
     call_id: u32,
     signature: &ir::Signature,
 ) -> *const VMFunctionBody {
+    // Mostly reverse copy of the similar method from wasmtime's
+    // wasmtime-jit/src/compiler.rs.
     let pointer_type = isa.pointer_type();
     let mut stub_sig = ir::Signature::new(isa.frontend_config().default_call_conv);
 

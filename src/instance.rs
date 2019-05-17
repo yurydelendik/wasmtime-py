@@ -1,3 +1,5 @@
+//! WebAssembly Instance API object.
+
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 

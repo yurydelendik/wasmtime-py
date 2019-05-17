@@ -1,3 +1,5 @@
+//! WebAssembly Module API object.
+
 use pyo3::prelude::*;
 
 use std::rc::Rc;
