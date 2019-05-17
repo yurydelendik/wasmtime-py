@@ -3,7 +3,7 @@ use pyo3::types::{PyBytes, PyDict};
 use pyo3::wrap_pyfunction;
 
 use crate::import::into_instance_from_obj;
-use crate::instance::{Instance, InstanceContext};
+use crate::instance::Instance;
 use crate::memory::Memory;
 use crate::module::Module;
 use std::cell::RefCell;
@@ -78,11 +78,14 @@ pub fn instantiate(
             module: instance.module(),
         },
     )?;
-    let context = Rc::new(RefCell::new(InstanceContext {
-        jit_context: context,
-        instance,
-    }));
-    let instance = Py::new(py, Instance { context })?;
+
+    let instance = Py::new(
+        py,
+        Instance {
+            context: Rc::new(RefCell::new(context)),
+            instance,
+        },
+    )?;
 
     Py::new(py, InstantiateResultObject { instance, module })
 }

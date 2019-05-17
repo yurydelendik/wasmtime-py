@@ -1,7 +1,9 @@
 import wasmtime_py
 
 def callback(msg_p: 'i32', msg_len: 'i32') -> 'i32':
-    global mv
+    global memory
+    mv = memoryview(memory)
+
     msg = bytes(mv[msg_p:(msg_p + msg_len)]).decode('utf-8')
     print(msg)
     return 42
@@ -14,5 +16,4 @@ res = wasmtime_py.instantiate(f.read(), { "env": env })
 instance = res.instance
 
 memory = instance.exports["memory"]
-mv = memoryview(memory)
 instance.exports["test"]()

@@ -10,27 +10,22 @@ use wasmtime_environ::Export;
 use wasmtime_jit::{Context, InstanceHandle};
 use wasmtime_runtime::Export as RuntimeExport;
 
-pub struct InstanceContext {
-    pub jit_context: Context,
-    pub instance: InstanceHandle,
-}
-
 #[pyclass]
 pub struct Instance {
-    pub context: Rc<RefCell<InstanceContext>>,
+    pub context: Rc<RefCell<Context>>,
+    pub instance: InstanceHandle,
 }
 
 #[pymethods]
 impl Instance {
     #[getter(exports)]
-    fn get_exports(&self) -> PyResult<PyObject> {
+    fn get_exports(&mut self) -> PyResult<PyObject> {
         let gil = Python::acquire_gil();
         let py = gil.python();
         let exports = PyDict::new(py);
-        let instance = &mut self.context.borrow_mut().instance;
         let mut function_exports = Vec::new();
         let mut memory_exports = Vec::new();
-        for (name, export) in instance.exports() {
+        for (name, export) in self.instance.exports() {
             match export {
                 Export::Function(_) => function_exports.push(name.to_string()),
                 Export::Memory(_) => memory_exports.push(name.to_string()),
@@ -41,11 +36,12 @@ impl Instance {
             }
         }
         for name in memory_exports {
-            if let Some(RuntimeExport::Memory { .. }) = instance.lookup(&name) {
+            if let Some(RuntimeExport::Memory { .. }) = self.instance.lookup(&name) {
                 let f = Py::new(
                     py,
                     Memory {
-                        instance_context: self.context.clone(),
+                        context: self.context.clone(),
+                        instance: self.instance.clone(),
                         export_name: name.clone(),
                     },
                 )?;
@@ -55,7 +51,7 @@ impl Instance {
             }
         }
         for name in function_exports {
-            if let Some(RuntimeExport::Function { signature, .. }) = instance.lookup(&name) {
+            if let Some(RuntimeExport::Function { signature, .. }) = self.instance.lookup(&name) {
                 // TODO Annotate params/result
                 let mut args_types = Vec::new();
                 for index in 1..signature.params.len() {
@@ -64,7 +60,8 @@ impl Instance {
                 let f = Py::new(
                     py,
                     Function {
-                        instance_context: self.context.clone(),
+                        context: self.context.clone(),
+                        instance: self.instance.clone(),
                         export_name: name.clone(),
                         args_types,
                     },

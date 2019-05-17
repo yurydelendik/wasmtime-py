@@ -9,19 +9,19 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::rc::Rc;
 
+use wasmtime_jit::{Context, InstanceHandle};
 use wasmtime_runtime::{Export, VMMemoryDefinition};
-
-use crate::instance::InstanceContext;
 
 #[pyclass]
 pub struct Memory {
-    pub instance_context: Rc<RefCell<InstanceContext>>,
+    pub context: Rc<RefCell<Context>>,
+    pub instance: InstanceHandle,
     pub export_name: String,
 }
 
 impl Memory {
     fn descriptor(&self) -> *mut VMMemoryDefinition {
-        let instance = &mut self.instance_context.borrow_mut().instance;
+        let mut instance = self.instance.clone();
         if let Some(Export::Memory { definition, .. }) = instance.lookup(&self.export_name) {
             definition
         } else {
