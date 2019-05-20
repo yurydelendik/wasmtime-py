@@ -1,6 +1,6 @@
 # Build example's file
 
-To build `gcd.wasm` use rustc (nightly) for wasm32 target with debug information:
+To build `import.wasm` use rustc (nightly) for wasm32 target with debug information:
 
 ```
 rustc +nightly --target=wasm32-unknown-unknown import.rs --crate-type=cdylib

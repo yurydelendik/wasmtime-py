@@ -4,6 +4,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyTuple};
 
 use crate::code_memory::CodeMemory;
+use crate::function::Function;
+use crate::memory::Memory;
 use crate::value::{read_value_from, write_value_to};
 use cranelift_codegen::ir::types;
 use cranelift_codegen::ir::{InstBuilder, StackSlotData, StackSlotKind};
@@ -18,7 +20,7 @@ use wasmtime_runtime::{Imports, InstanceHandle, VMContext, VMFunctionBody};
 
 use core::cmp;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 struct BoundPyFunction {
@@ -189,8 +191,36 @@ fn parse_annotation_type(s: &str) -> ir::Type {
     }
 }
 
+fn get_signature_from_py_annotation(
+    annot: &PyDict,
+    pointer_type: ir::Type,
+    call_conv: isa::CallConv,
+) -> PyResult<ir::Signature> {
+    let mut params = Vec::new();
+    params.push(ir::AbiParam::special(
+        pointer_type,
+        ir::ArgumentPurpose::VMContext,
+    ));
+    let mut returns = None;
+    for (name, value) in annot.iter() {
+        let ty = parse_annotation_type(&value.to_string());
+        match name.to_string().as_str() {
+            "return" => returns = Some(ty),
+            _ => params.push(ir::AbiParam::new(ty)),
+        }
+    }
+    Ok(ir::Signature {
+        params,
+        returns: match returns {
+            Some(r) => vec![ir::AbiParam::new(r)],
+            None => vec![],
+        },
+        call_conv,
+    })
+}
+
 pub fn into_instance_from_obj(
-    _py: Python,
+    py: Python,
     global_exports: Rc<RefCell<HashMap<String, Option<wasmtime_runtime::Export>>>>,
     obj: &PyAny,
 ) -> PyResult<InstanceHandle> {
@@ -212,36 +242,21 @@ pub fn into_instance_from_obj(
 
     let obj = obj.cast_as::<PyDict>()?;
     let mut bound_functions = Vec::new();
+    let mut dependencies = HashSet::new();
+    let mut memories = PrimaryMap::new();
     for (name, item) in obj.iter() {
         if item.is_callable() {
-            // TODO support wasm specific calls
-            if !item.hasattr("__annotations__")? {
+            let sig = if item.get_type().is_subclass::<Function>()? {
+                // TODO faster calls?
+                let wasm_fn = item.cast_as::<Function>()?;
+                dependencies.insert(wasm_fn.instance.clone());
+                wasm_fn.get_signature()
+            } else if item.hasattr("__annotations__")? {
+                let annot = item.getattr("__annotations__")?.cast_as::<PyDict>()?;
+                get_signature_from_py_annotation(&annot, pointer_type, call_conv)?
+            } else {
                 // TODO support calls without annotations?
                 continue;
-            }
-            let sig = {
-                let mut params = Vec::new();
-                params.push(ir::AbiParam::special(
-                    pointer_type,
-                    ir::ArgumentPurpose::VMContext,
-                ));
-                let mut returns = None;
-                let annot = item.getattr("__annotations__")?.cast_as::<PyDict>()?;
-                for (name, value) in annot.iter() {
-                    let ty = parse_annotation_type(&value.to_string());
-                    match name.to_string().as_str() {
-                        "return" => returns = Some(ty),
-                        _ => params.push(ir::AbiParam::new(ty)),
-                    }
-                }
-                ir::Signature {
-                    params,
-                    returns: match returns {
-                        Some(r) => vec![ir::AbiParam::new(r)],
-                        None => vec![],
-                    },
-                    call_conv,
-                }
             };
 
             let sig_id = module.signatures.push(sig.clone());
@@ -260,12 +275,32 @@ pub fn into_instance_from_obj(
 
             bound_functions.push(BoundPyFunction {
                 name: name.to_string(),
-                obj: item.into_object(_py),
+                obj: item.into_object(py),
             });
+        } else if item.get_type().is_subclass::<Memory>()? {
+            let wasm_mem = item.cast_as::<Memory>()?;
+            dependencies.insert(wasm_mem.instance.clone());
+            let plan = wasm_mem.get_plan();
+            let mem_id = module.memory_plans.push(plan);
+            let _mem_id_2 = memories.push(wasm_mem.into_import());
+            assert_eq!(mem_id, _mem_id_2);
+            let _mem_id_3 = module
+                .imported_memories
+                .push((String::from(""), String::from("")));
+            assert_eq!(mem_id, _mem_id_3);
+            module
+                .exports
+                .insert(name.to_string(), Export::Memory(mem_id));
         }
     }
 
-    let imports = Imports::none();
+    let imports = Imports::new(
+        dependencies,
+        PrimaryMap::new(),
+        PrimaryMap::new(),
+        memories,
+        PrimaryMap::new(),
+    );
     let data_initializers = Vec::new();
     let signatures = PrimaryMap::new();
 

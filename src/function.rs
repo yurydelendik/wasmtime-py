@@ -9,6 +9,7 @@ use std::rc::Rc;
 
 use cranelift_codegen::ir;
 use wasmtime_jit::{Context, InstanceHandle};
+use wasmtime_runtime::Export;
 
 // TODO support non-export functions
 #[pyclass]
@@ -17,6 +18,17 @@ pub struct Function {
     pub instance: InstanceHandle,
     pub export_name: String,
     pub args_types: Vec<ir::Type>,
+}
+
+impl Function {
+    pub fn get_signature(&self) -> ir::Signature {
+        let mut instance = self.instance.clone();
+        if let Some(Export::Function { signature, .. }) = instance.lookup(&self.export_name) {
+            signature
+        } else {
+            panic!()
+        }
+    }
 }
 
 #[pymethods]

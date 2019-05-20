@@ -11,8 +11,9 @@ use std::os::raw::{c_int, c_void};
 use std::ptr;
 use std::rc::Rc;
 
+use wasmtime_environ::MemoryPlan;
 use wasmtime_jit::{Context, InstanceHandle};
-use wasmtime_runtime::{Export, VMMemoryDefinition};
+use wasmtime_runtime::{Export, VMMemoryDefinition, VMMemoryImport};
 
 #[pyclass]
 pub struct Memory {
@@ -28,6 +29,32 @@ impl Memory {
             definition
         } else {
             panic!("memory is expected");
+        }
+    }
+}
+
+impl Memory {
+    pub fn get_plan(&self) -> MemoryPlan {
+        let mut instance = self.instance.clone();
+        if let Some(Export::Memory { memory, .. }) = instance.lookup(&self.export_name) {
+            memory
+        } else {
+            panic!()
+        }
+    }
+
+    pub fn into_import(&self) -> VMMemoryImport {
+        let mut instance = self.instance.clone();
+        if let Some(Export::Memory {
+            definition, vmctx, ..
+        }) = instance.lookup(&self.export_name)
+        {
+            VMMemoryImport {
+                from: definition,
+                vmctx,
+            }
+        } else {
+            panic!()
         }
     }
 }

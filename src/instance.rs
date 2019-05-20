@@ -8,6 +8,8 @@ use crate::memory::Memory;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use cranelift_codegen::ir;
+use cranelift_codegen::ir::types;
 use wasmtime_environ::Export;
 use wasmtime_jit::{Context, InstanceHandle};
 use wasmtime_runtime::Export as RuntimeExport;
@@ -16,6 +18,16 @@ use wasmtime_runtime::Export as RuntimeExport;
 pub struct Instance {
     pub context: Rc<RefCell<Context>>,
     pub instance: InstanceHandle,
+}
+
+fn get_type_annot(ty: ir::Type) -> &'static str {
+    match ty {
+        types::I32 => "i32",
+        types::I64 => "i64",
+        types::F32 => "f32",
+        types::F64 => "f64",
+        _ => panic!("unknown type"),
+    }
 }
 
 #[pymethods]
@@ -54,10 +66,20 @@ impl Instance {
         }
         for name in function_exports {
             if let Some(RuntimeExport::Function { signature, .. }) = self.instance.lookup(&name) {
-                // TODO Annotate params/result
+                let annot = PyDict::new(py);
                 let mut args_types = Vec::new();
                 for index in 1..signature.params.len() {
-                    args_types.push(signature.params[index].value_type);
+                    let ty = signature.params[index].value_type;
+                    args_types.push(ty);
+                    annot.set_item(format!("param{}", index - 1), get_type_annot(ty))?;
+                }
+                match signature.returns.len() {
+                    0 => (),
+                    1 => {
+                        annot
+                            .set_item("return", get_type_annot(signature.returns[0].value_type))?;
+                    }
+                    _ => panic!("multi-return"),
                 }
                 let f = Py::new(
                     py,
@@ -68,6 +90,8 @@ impl Instance {
                         args_types,
                     },
                 )?;
+                // FIXME set the f object the `__annotations__` attribute somehow?
+                let _ = annot;
                 exports.set_item(name, f)?;
             } else {
                 panic!("function");
