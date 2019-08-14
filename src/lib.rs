@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyBytes, PyDict};
+use pyo3::types::{PyBytes, PyDict, PySet};
 use pyo3::wrap_pyfunction;
 
 use crate::import::into_instance_from_obj;
@@ -91,12 +91,43 @@ pub fn instantiate(
     Py::new(py, InstantiateResultObject { instance, module })
 }
 
+#[pyfunction]
+pub fn imported_modules<'p>(py: Python<'p>, buffer_source: &PyBytes) -> PyResult<&'p PyDict> {
+    let wasm_data = buffer_source.as_bytes();
+    let dict = PyDict::new(py);
+    // TODO: error handling
+    let mut parser = wasmparser::ModuleReader::new(wasm_data).unwrap();
+    while !parser.eof() {
+        let section = parser.read().unwrap();
+        match section.code {
+            wasmparser::SectionCode::Import => {}
+            _ => continue,
+        };
+        let reader = section.get_import_section_reader().unwrap();
+        for import in reader {
+            let import = import.unwrap();
+            let set = match dict.get_item(import.module) {
+                Some(set) => set.downcast_ref::<PySet>().unwrap(),
+                None => {
+                    let set = PySet::new::<PyObject>(py, &[])?;
+                    dict.set_item(import.module, set)?;
+                    set
+                }
+            };
+            set.add(import.field)?;
+        }
+    }
+    Ok(dict)
+}
+
 #[pymodule]
-fn wasmtime_py(_: Python, m: &PyModule) -> PyResult<()> {
+fn lib_wasmtime(_: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Instance>()?;
     m.add_class::<Memory>()?;
     m.add_class::<Module>()?;
     m.add_class::<InstantiateResultObject>()?;
     m.add_wrapped(wrap_pyfunction!(instantiate))?;
+    m.add_wrapped(wrap_pyfunction!(imported_modules))?;
     Ok(())
 }
+

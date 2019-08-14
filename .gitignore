@@ -13,3 +13,6 @@ rusty-tags.*
 .lldbinit
 *.so
 test.py
+build/
+dist/
+*.egg-info/

@@ -10,23 +10,22 @@ edition = "2018"
 publish = false
 
 [lib]
-name = "wasmtime_py"
+name = "_wasmtime"
 crate-type = ["cdylib"]
 
 [dependencies]
-cranelift-codegen = "0.30.0"
-cranelift-native = "0.30.0"
-cranelift-entity = "0.30.0"
-cranelift-wasm = "0.30.0"
-cranelift-frontend = "0.30.0"
-wasmtime-environ = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
-wasmtime-jit = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
-wasmtime-runtime = { git = "https://github.com/CraneStation/wasmtime", rev = "6740704b" }
-target-lexicon = { version = "0.3.0", default-features = false }
+cranelift-codegen = "0.38.0"
+cranelift-native = "0.38.0"
+cranelift-entity = "0.38.0"
+cranelift-wasm = "0.38.0"
+cranelift-frontend = "0.38.0"
+wasmtime-environ = { path = "./wasmtime/wasmtime-environ" }
+wasmtime-jit = { path = "./wasmtime/wasmtime-jit" }
+wasmtime-runtime = { path = "./wasmtime/wasmtime-runtime" }
+target-lexicon = { version = "0.4.0", default-features = false }
 region = "2.0.0"
+wasmparser = "0.35.3"
 
 [dependencies.pyo3]
 version = "0.7.0-alpha.1"
 features = ["extension-module"]
-
-[patch.crates-io]
